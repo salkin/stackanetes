@@ -65,8 +65,8 @@ kpm.package({
 
       heat_user: "heat",
       heat_password: "password",
-      heat_database_name: "nova",
-      heat_api_database_name: "nova_api"
+      heat_database_name: "heat",
+      heat_api_database_name: "heat_api"
     },
 
     keystone: {
