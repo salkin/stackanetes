@@ -26,6 +26,8 @@ kpm.package({
         base: "quay.io/stackanetes/stackanetes-%s:barcelona",
 
         init: $.variables.deployment.image.base % "kolla-toolbox",
+        db_sync: "docker.io/nwik/heat-api:3.0.0",
+        api: "docker.io/nwik/heat-api:3.0.0",
       },
     },
 
@@ -40,6 +42,7 @@ kpm.package({
       },
 
       port: {
+	api: 8004,
       },
 
       ingress: {
@@ -52,9 +55,8 @@ kpm.package({
         }
       },
     },
-
-    nova: {
-      drain_timeout: 15,
+    heat: {
+     api_url: "http://heat-api:8004"
     },
 
     database: {
@@ -80,13 +82,6 @@ kpm.package({
       tenant_name: "admin",
       auth: "{'auth_url':'%s', 'username':'%s','password':'%s','project_name':'%s','domain_name':'%s'}" % [$.variables.keystone.auth_url, $.variables.keystone.admin_user, $.variables.keystone.admin_password, $.variables.keystone.admin_project_name, $.variables.keystone.domain_name],
 
-      neutron_user: "neutron",
-      neutron_password: "password",
-      neutron_region_name: "RegionOne",
-
-      nova_user: "nova",
-      nova_password: "password",
-      nova_region_name: "RegionOne",
     },
 
     rabbitmq: {
@@ -94,25 +89,6 @@ kpm.package({
       admin_user: "rabbitmq",
       admin_password: "password",
       port: 5672
-    },
-
-    ceph: {
-      enabled: true,
-      monitors: [],
-
-      cinder_user: "cinder",
-      cinder_keyring: "",
-      nova_pool: "vms",
-      secret_uuid: "",
-    },
-
-    glance: {
-      api_url: "http://glance-api:9292",
-    },
-
-    neutron: {
-      api_url: "http://neutron-server:9696",
-      metadata_secret: "password",
     },
 
     memcached: {
@@ -133,6 +109,18 @@ kpm.package({
       name: "heat-initsh",
       type: "configmap",
     },
+    {
+      file: "configmaps/db-sync.sh.yaml.j2",
+      template: (importstr "templates/configmaps/db-sync.sh.yaml.j2"),
+      name: "heat-dbsyncsh",
+      type: "configmap",
+    },
+    {
+      file: "configmaps/heat.conf.yaml.j2",
+      template: (importstr "templates/configmaps/heat.conf.yaml.j2"),
+      name: "heat-heatconf",
+      type: "configmap",
+    },
 
 
     // Init.
@@ -142,33 +130,39 @@ kpm.package({
       name: "heat-init",
       type: "job",
     },
+    {
+      file: "jobs/db-sync.yaml.j2",
+      template: (importstr "templates/jobs/db-sync.yaml.j2"),
+      name: "heat-db-sync",
+      type: "job",
+    },
 
     // Deployments.
-    //{
-    //  file: "api/deployment.yaml.j2",
-    //  template: (importstr "templates/api/deployment.yaml.j2"),
-    //  name: "heat-api",
-    //  type: "deployment",
-    //},
+    {
+      file: "api/deployment.yaml.j2",
+      template: (importstr "templates/api/deployment.yaml.j2"),
+      name: "heat-api",
+      type: "deployment",
+    },
 
 
     // Services.
-   // {
-   //   file: "api/service.yaml.j2",
-   //   template: (importstr "templates/api/service.yaml.j2"),
-   //   name: "heat-api",
-   //   type: "service",
-   // },
+    {
+      file: "api/service.yaml.j2",
+      template: (importstr "templates/api/service.yaml.j2"),
+      name: "heat-api",
+      type: "service",
+    },
 
     // Ingresses.
-//    if $.variables.network.ingress.enabled == true then
-//      {
-//        file: "api/ingress.yaml.j2",
-//        template: (importstr "templates/api/ingress.yaml.j2"),
-//        name: "heat-api",
-//        type: "ingress",
-//      },
-//
+    if $.variables.network.ingress.enabled == true then
+      {
+        file: "api/ingress.yaml.j2",
+        template: (importstr "templates/api/ingress.yaml.j2"),
+        name: "heat-api",
+        type: "ingress",
+      },
+
   ],
 
   deploy: [

@@ -1,0 +1,43 @@
+apiVersion: batch/v1
+kind: Job
+spec:
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: heat-db-sync
+          image: {{ deployment.image.db_sync }}
+          imagePullPolicy: Always
+          env:
+            - name: INTERFACE_NAME
+              value: "eth0"
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: COMMAND
+              value: "bash /tmp/db-sync.sh"
+            - name: DEPENDENCY_JOBS
+              value: "heat-init,mariadb-init"
+            - name: DEPENDENCY_SERVICE
+              value: "mariadb"
+            - name: DEPENDENCY_CONFIG
+              value: "/etc/heat/heat.conf"
+          volumeMounts:
+            - name: heatconf
+              mountPath: /configmaps/heat.conf
+            - name: dbsyncsh
+              mountPath: /tmp/db-sync.sh
+              subPath: db-sync.sh
+      volumes:
+        - name: heatconf
+          configMap:
+            name: heat-heatconf
+        - name: dbsyncsh
+          configMap:
+            name: heat-dbsyncsh
+

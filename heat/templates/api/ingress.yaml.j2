@@ -1,0 +1,11 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+spec:
+  rules:
+  - host: {{ network.ingress.named_host.api }}
+    http:
+      paths:
+      -  backend:
+          serviceName: heat-api
+          servicePort: {{ network.port.api }}
+

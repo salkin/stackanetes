@@ -1,0 +1,75 @@
+apiVersion: v1
+kind: ConfigMap
+data:
+  heat.conf: |+
+    [DEFAULT]
+    heat_watch_server_url = {{ heat.api_url }}
+    heat_metadata_server_url = {{ heat.api_url }}
+    heat_waitcondition_server_url = {{ heat.api_url }}/v1/waitcondition
+    stack_domain_admin = heat_domain_admin
+    stack_domain_admin_password = password
+    stack_user_domain_name = heat_user_domain
+    rpc_backend = rabbit
+    deferred_auth_method = trusts
+    trusts_delegated_role = heat_stack_owner
+
+    #[oslo_messaging_rabbit]
+    #rabbit_userid = openstack
+    #rabbit_password = Wg8zlU0TEoVWzym9VAzL1Ac50Xn48hpdvUEYh1bC
+    #rabbit_ha_queues = true
+    #rabbit_hosts = {{ rabbitmq.address }}:5672
+
+    [heat_api]
+    bind_host = {{ network.ip_address }} 
+    bind_port = 8004
+
+    [trustee]
+    auth_uri = {{ keystone.auth_uri }}
+    auth_url = {{ keystone.auth_url }}
+    auth_plugin = password
+    project_domain_id = default
+    user_domain_id = default
+    project_name = service
+    username = heat
+    password = password
+
+    [ec25authtoken]
+    auth_uri = {{ keystone.auth_uri }}
+
+    [clients_keystone]
+    auth_uri = {{ keystone.auth_uri }} 
+
+    debug = {{ misc.debug }}
+    
+
+    # Though my_ip is not used directly, lots of other variables use $my_ip
+    my_ip = {{ network.ip_address }}
+
+    transport_url = rabbit://{{ rabbitmq.admin_user }}:{{ rabbitmq.admin_password }}@{{ rabbitmq.address }}:{{ rabbitmq.port }}
+
+    [oslo_concurrency]
+    lock_path = /var/lib/heat/tmp
+
+
+    [database]
+    connection = mysql+pymysql://{{ database.heat_user }}:{{ database.heat_password }}@{{ database.address }}/{{ database.heat_database_name }}
+    max_retries = -1
+
+    [keystone_authtoken]
+    auth_uri = {{ keystone.auth_uri }}
+    auth_url = {{ keystone.auth_url }}
+    auth_type = password
+    project_domain_id = default
+    user_domain_id = default
+    project_name = service
+    username = {{ keystone.nova_user }}
+    password = {{ keystone.nova_password }}
+
+    [cache]
+    enabled = True
+    backend = oslo_cache.memcache_pool
+    memcache_servers = {{ memcached.address }}
+
+    [oslo_messaging_notifications]
+    driver = noop
+
